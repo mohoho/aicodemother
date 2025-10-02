@@ -6,7 +6,7 @@ server:
   servlet:
     context-path: /api
 
-# springdoc-openapi????
+# springdoc-openapi
 springdoc:
   group-configs:
     - group: 'default'
