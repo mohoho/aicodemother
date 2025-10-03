@@ -7,16 +7,20 @@ import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.qmruan.aicodemother.exception.BusinessException;
 import com.qmruan.aicodemother.exception.ErrorCode;
 import com.qmruan.aicodemother.exception.ThrowUtils;
+import com.qmruan.aicodemother.model.dto.UserQueryRequest;
 import com.qmruan.aicodemother.model.entity.User;
 import com.qmruan.aicodemother.mapper.UserMapper;
 import com.qmruan.aicodemother.model.enums.UserRoleEnum;
 import com.qmruan.aicodemother.model.vo.LoginUserVO;
+import com.qmruan.aicodemother.model.vo.UserVO;
 import com.qmruan.aicodemother.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.qmruan.aicodemother.constant.UserConstant.USER_LOGIN_STATE;
 
@@ -29,11 +33,54 @@ import static com.qmruan.aicodemother.constant.UserConstant.USER_LOGIN_STATE;
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements UserService{
 
     @Override
+    public QueryWrapper getQueryWrapper(UserQueryRequest userQueryRequest) {
+        if (userQueryRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数为空");
+        }
+        Long id = userQueryRequest.getId();
+        String userAccount = userQueryRequest.getUserAccount();
+        String userName = userQueryRequest.getUserName();
+        String userProfile = userQueryRequest.getUserProfile();
+        String userRole = userQueryRequest.getUserRole();
+        String sortField = userQueryRequest.getSortField();
+        String sortOrder = userQueryRequest.getSortOrder();
+        return QueryWrapper.create()
+                .eq("id", id)
+                .eq("userRole", userRole)
+                .like("userAccount", userAccount)
+                .like("userName", userName)
+                .like("userProfile", userProfile)
+                .orderBy(sortField, "ascend".equals(sortOrder));
+    }
+
+
+    @Override
     public boolean userLogout(HttpServletRequest req) {
         Object userObj = req.getSession().getAttribute(USER_LOGIN_STATE);
         ThrowUtils.throwIf(userObj == null, ErrorCode.NOT_LOGIN_ERROR);
         req.getSession().removeAttribute(USER_LOGIN_STATE);
         return true;
+    }
+
+    @Override
+    public UserVO getUserVO(User user) {
+        if (user == null) {
+            return null;
+        }
+
+        UserVO userVO = new UserVO();
+        BeanUtil.copyProperties(user,userVO);
+
+        return userVO;
+    }
+
+    @Override
+    public List<UserVO> getUserVOList(List<User> users) {
+        if (users == null) {
+            return new ArrayList<>();
+        }
+
+        return users.stream().map(this::getUserVO).toList();
     }
 
     @Override
@@ -49,7 +96,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
 
         ThrowUtils.throwIf(currentUser == null, ErrorCode.NOT_LOGIN_ERROR);
 
-        return null;
+        return currentUser;
     }
 
     @Override
@@ -62,8 +109,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
 
         // 查询用户是否存在
         QueryWrapper queryWrapper = new QueryWrapper();
-        queryWrapper.eq("username", username);
-        queryWrapper.eq("password", encryptPassword);
+        queryWrapper.eq("userAccount", username);
+        queryWrapper.eq("userPassword", encryptPassword);
         User user = this.mapper.selectOneByQuery(queryWrapper);
         ThrowUtils.throwIf(user == null, new BusinessException(ErrorCode.PARAMS_ERROR, "账号或密码错误"));
 
