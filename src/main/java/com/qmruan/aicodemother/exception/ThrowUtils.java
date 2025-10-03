@@ -10,7 +10,7 @@ public class ThrowUtils {
     }
 
     public static void throwIf(boolean condition, ErrorCode errorCode){
-        throwIf(condition,errorCode);
+        throwIf(condition,errorCode, errorCode.getMessage());
     }
 
     public static void throwIf(boolean condition, ErrorCode errorCode, String message){
