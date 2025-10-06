@@ -11,11 +11,11 @@ import java.util.Map;
 
 public class MybatisCodeGenerator {
 
-    public static final String[] TABLE_NAMES = new String[]{"user"};
+    public static final String[] TABLE_NAMES = new String[]{"app"};
 
     public static void main(String[] args) {
 
-        Dict dict = YamlUtil.loadByPath("application.yml");
+        Dict dict = YamlUtil.loadByPath("application-local.yml");
         Map<String, Object> datasourceConfig = dict.getByPath("spring.datasource");
         String url = String.valueOf(datasourceConfig.get("url"));
         String username = String.valueOf(datasourceConfig.get("username"));
