@@ -73,24 +73,30 @@ const handleSubmitFailed = (errorInfo: any) => {
 };
 </script>
 <style scoped>
-.title{
+#userLoginPage {
+  background: white;
+  max-width: 720px;
+  padding: 24px;
+  margin: 24px auto;
+}
+
+.title {
   text-align: center;
   margin-bottom: 16px;
 }
 
-.desc{
+.desc {
   text-align: center;
   color: #bbb;
   margin-bottom: 16px;
 }
 
-.tips{
-  text-align: center;
-  margin-bottom: 16px;
+.tips {
+  text-align: right;
+  color: #bbb;
   font-size: 13px;
-  color: #bbb;
+  margin-bottom: 16px;
 }
-
 </style>
 
 

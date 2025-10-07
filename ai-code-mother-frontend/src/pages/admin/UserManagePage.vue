@@ -14,7 +14,6 @@
     </a-form>
     <a-divider />
     <!-- 表格 -->
-
     <a-table
       :columns="columns"
       :data-source="data"
@@ -44,11 +43,11 @@
   </div>
 </template>
 <script lang="ts" setup>
-// import { SmileOutlined, DownOutlined } from '@ant-design/icons-vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { deleteUser, listUserVoByPage } from '@/api/userController.ts'
 import { message } from 'ant-design-vue'
 import dayjs from 'dayjs'
+
 const columns = [
   {
     title: 'id',
@@ -84,6 +83,7 @@ const columns = [
   },
 ]
 
+// 展示的数据
 const data = ref<API.UserVO[]>([])
 const total = ref(0)
 
@@ -93,16 +93,16 @@ const searchParams = reactive<API.UserQueryRequest>({
   pageSize: 10,
 })
 
+// 获取数据
 const fetchData = async () => {
   const res = await listUserVoByPage({
     ...searchParams,
   })
-
-  if (res.data.code === 0 && res.data.data) {
+  if (res.data.data) {
     data.value = res.data.data.records ?? []
     total.value = res.data.data.totalRow ?? 0
   } else {
-    message.error('获取数据失败' + res.data.message)
+    message.error('获取数据失败，' + res.data.message)
   }
 }
 
@@ -117,14 +117,14 @@ const pagination = computed(() => {
   }
 })
 
-// 表格分页变化
-const doTableChange = (page: any) => {
+// 表格分页变化时的操作
+const doTableChange = (page: { current: number; pageSize: number }) => {
   searchParams.pageNum = page.current
   searchParams.pageSize = page.pageSize
   fetchData()
 }
 
-// 搜索
+// 搜索数据
 const doSearch = () => {
   // 重置页码
   searchParams.pageNum = 1
@@ -140,7 +140,7 @@ const doDelete = async (id: string) => {
   if (res.data.code === 0) {
     message.success('删除成功')
     // 刷新数据
-    await fetchData()
+    fetchData()
   } else {
     message.error('删除失败')
   }
@@ -154,6 +154,8 @@ onMounted(() => {
 
 <style scoped>
 #userManagePage {
-  width: 1200px;
+  padding: 24px;
+  background: white;
+  margin-top: 16px;
 }
 </style>
