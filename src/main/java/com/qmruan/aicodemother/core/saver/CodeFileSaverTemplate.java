@@ -3,6 +3,7 @@ package com.qmruan.aicodemother.core.saver;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
+import com.qmruan.aicodemother.constant.AppConstant;
 import com.qmruan.aicodemother.exception.ErrorCode;
 import com.qmruan.aicodemother.exception.ThrowUtils;
 import com.qmruan.aicodemother.model.enums.CodeGenTypeEnum;
@@ -18,18 +19,19 @@ import java.nio.charset.StandardCharsets;
 public abstract class CodeFileSaverTemplate<T> {
 
     // 文件保存根目录
-    public static final String FILE_SAVE_ROOT_DIR = System.getProperty("user.dir") + "/tmp/code_output";
+    public static final String FILE_SAVE_ROOT_DIR = AppConstant.CODE_OUTPUT_ROOT_DIR;
 
     /**
      * 模板方法，保存代码的基本流程
      * @param result
+     * @param appId
      * @return
      */
-    public final File saveCode(T result) {
+    public final File saveCode(T result, Long appId) {
         // 1. 验证输入
         validateInput(result);
         // 2. 构建唯一目录
-        String baseDirPath = buildUniqueDir();
+        String baseDirPath = buildUniqueDir(appId);
         // 3. 保存文件（具体实现交给子类）
         saveFiles(result, baseDirPath);
         // 4. 返回文件目录对象
@@ -38,6 +40,18 @@ public abstract class CodeFileSaverTemplate<T> {
 
     protected void validateInput(T result) {
         ThrowUtils.throwIf(result == null, ErrorCode.PARAMS_ERROR);
+    }
+
+    /**
+     * 构建文件的唯一路径(tmp/code_output/bizType_APPID)
+     * @param
+     * @return
+     */
+    protected String buildUniqueDir(Long appId) {
+        String bizType = getCodeType().getValue();
+        String uniqueDir = FILE_SAVE_ROOT_DIR + File.separator + bizType + "_" + appId;
+        FileUtil.mkdir(uniqueDir);
+        return uniqueDir;
     }
 
     /**
