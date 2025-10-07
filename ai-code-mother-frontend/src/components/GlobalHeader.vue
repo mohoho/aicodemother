@@ -6,7 +6,7 @@
         <RouterLink to="/">
           <div class="header-left">
             <img class="logo" src="@/assets/logo.png" alt="Logo" />
-            <h1 class="site-title">鱼皮应用生成</h1>
+            <h1 class="site-title">应用生成</h1>
           </div>
         </RouterLink>
       </a-col>
@@ -26,7 +26,7 @@
             <a-dropdown>
               <a-space>
                 <a-avatar :src="loginUserStore.loginUser.userAvatar" />
-                {{ loginUserStore.loginUser.userName ?? '无名' }}
+                {{ loginUserStore.loginUser.userName ?? '未命名' }}
               </a-space>
               <template #overlay>
                 <a-menu>
@@ -85,7 +85,7 @@ const originItems = [
   {
     key: 'others',
     label: h('a', { href: 'https://github.com/mohoho', target: '_blank' }, 'github'),
-    title: 'github',
+    title: '关于',
   },
 ]
 
