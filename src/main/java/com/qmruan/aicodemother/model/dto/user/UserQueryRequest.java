@@ -1,4 +1,4 @@
-package com.qmruan.aicodemother.model.dto;
+package com.qmruan.aicodemother.model.dto.user;
 
 import com.qmruan.aicodemother.common.PageRequest;
 import lombok.Data;

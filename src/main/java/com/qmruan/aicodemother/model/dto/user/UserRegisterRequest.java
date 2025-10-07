@@ -1,4 +1,4 @@
-package com.qmruan.aicodemother.model.dto;
+package com.qmruan.aicodemother.model.dto.user;
 
 import lombok.Data;
 

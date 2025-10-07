@@ -1,7 +1,6 @@
 package com.qmruan.aicodemother.controller;
 
 import cn.hutool.core.bean.BeanUtil;
-import com.fasterxml.jackson.databind.ser.Serializers;
 import com.mybatisflex.core.paginate.Page;
 import com.qmruan.aicodemother.annotation.AuthCheck;
 import com.qmruan.aicodemother.common.BaseResponse;
@@ -11,19 +10,15 @@ import com.qmruan.aicodemother.constant.UserConstant;
 import com.qmruan.aicodemother.exception.BusinessException;
 import com.qmruan.aicodemother.exception.ErrorCode;
 import com.qmruan.aicodemother.exception.ThrowUtils;
-import com.qmruan.aicodemother.model.dto.*;
+import com.qmruan.aicodemother.model.dto.user.*;
 import com.qmruan.aicodemother.model.vo.LoginUserVO;
 import com.qmruan.aicodemother.model.vo.UserVO;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.beans.factory.annotation.Autowired;
 import com.qmruan.aicodemother.model.entity.User;
 import com.qmruan.aicodemother.service.UserService;
 import org.springframework.web.bind.annotation.RestController;
