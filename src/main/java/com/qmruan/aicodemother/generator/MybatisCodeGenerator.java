@@ -11,7 +11,7 @@ import java.util.Map;
 
 public class MybatisCodeGenerator {
 
-    public static final String[] TABLE_NAMES = new String[]{"app"};
+    public static final String[] TABLE_NAMES = new String[]{"chat_history"};
 
     public static void main(String[] args) {
 
