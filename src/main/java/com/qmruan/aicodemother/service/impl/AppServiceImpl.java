@@ -10,6 +10,8 @@ import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.qmruan.aicodemother.constant.AppConstant;
 import com.qmruan.aicodemother.core.AiCodeGeneratorFacade;
+import com.qmruan.aicodemother.core.parser.CodeParserExecutor;
+import com.qmruan.aicodemother.core.saver.CodeFileSaverExecutor;
 import com.qmruan.aicodemother.exception.BusinessException;
 import com.qmruan.aicodemother.exception.ErrorCode;
 import com.qmruan.aicodemother.exception.ThrowUtils;
@@ -17,17 +19,21 @@ import com.qmruan.aicodemother.model.dto.app.AppQueryRequest;
 import com.qmruan.aicodemother.model.entity.App;
 import com.qmruan.aicodemother.mapper.AppMapper;
 import com.qmruan.aicodemother.model.entity.User;
+import com.qmruan.aicodemother.model.enums.ChatHistoryMessageTypeEnum;
 import com.qmruan.aicodemother.model.enums.CodeGenTypeEnum;
 import com.qmruan.aicodemother.model.vo.AppVO;
 import com.qmruan.aicodemother.model.vo.UserVO;
 import com.qmruan.aicodemother.service.AppService;
+import com.qmruan.aicodemother.service.ChatHistoryService;
 import com.qmruan.aicodemother.service.UserService;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
 import java.io.File;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,10 +47,14 @@ import java.util.stream.Collectors;
  * @author qmruan
  */
 @Service
+@Slf4j
 public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppService{
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private ChatHistoryService chatHistoryService;
 
     @Resource
     private AiCodeGeneratorFacade aiCodeGeneratorFacade;
@@ -128,9 +138,25 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         String codeGenType = app.getCodeGenType();
         CodeGenTypeEnum codeGenTypeEnum = CodeGenTypeEnum.getEnumByValue(codeGenType);
         ThrowUtils.throwIf(codeGenTypeEnum == null, new BusinessException(ErrorCode.PARAMS_ERROR, "代码生成类型错误"));
-        // 5. 调用 AI生成代码
-        Flux<String> flux = aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeGenTypeEnum, appId);
-        return flux;
+        // 5. 在调用AI前先保存用户消息到数据库中
+        chatHistoryService.addChatMessage(appId, message, ChatHistoryMessageTypeEnum.USER.getValue(), loginUser.getId());
+        // 6. 调用 AI生成代码
+        Flux<String> contentFlux = aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeGenTypeEnum, appId);
+
+        StringBuilder aiResponseBuilder = new StringBuilder();
+        // 实时收集代码片段
+        // 保存ai消息到对话历史中
+        return contentFlux.map(chunk -> {
+            // 实时收集代码片段
+            aiResponseBuilder.append(chunk);
+            return chunk;
+        }).doOnComplete(() -> {
+            // 保存ai消息到对话历史中
+            chatHistoryService.addChatMessage(appId, aiResponseBuilder.toString(), ChatHistoryMessageTypeEnum.AI.getValue(), loginUser.getId());
+        }).doOnError(error -> {
+            String aiResponse = "AI回复失败:" + error.getMessage();
+            chatHistoryService.addChatMessage(appId, aiResponse, ChatHistoryMessageTypeEnum.AI.getValue(), loginUser.getId());
+        });
     }
 
     @Override
@@ -171,6 +197,33 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         ThrowUtils.throwIf(!res, ErrorCode.OPERATION_ERROR, "更新应用部署信息失败");
         // 9. 返回可访问的URL地址
         return String.format("%s/%s/", AppConstant.CODE_DEPLOY_HOST, deployKey);
+    }
+
+    /**
+     * 删除应用时，关联删除对话历史
+     *
+     * @param id
+     * @return
+     */
+
+    @Override
+    public boolean removeById(Serializable id) {
+        if (id == null) {
+            return false;
+        }
+
+        long appId = Long.parseLong(id.toString());
+        if (appId <= 0) {
+            return false;
+        }
+        // 先关联删除对话历史
+        try {
+            chatHistoryService.deleteByAppId(appId);
+        } catch (Exception e) {
+            log.error("删除应用关联的对话历史失败：{}", e.getMessage());
+        }
+        // 删除应用
+        return super.removeById(id);
     }
 
 
