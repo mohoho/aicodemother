@@ -1,6 +1,7 @@
 package com.qmruan.aicodemother.core;
 
 import com.qmruan.aicodemother.ai.AiCodeGeneratorService;
+import com.qmruan.aicodemother.ai.AiCodeGeneratorServiceFactory;
 import com.qmruan.aicodemother.ai.model.HtmlCodeResult;
 import com.qmruan.aicodemother.ai.model.MultiFileCodeResult;
 import com.qmruan.aicodemother.core.parser.CodeParserExecutor;
@@ -21,10 +22,11 @@ import java.io.File;
 public class AiCodeGeneratorFacade {
 
     @Resource
-    private AiCodeGeneratorService aiCodeGeneratorService;
+    private AiCodeGeneratorServiceFactory aiCodeGeneratorServiceFactory;
 
     public File generateAndSaveCode(String userMessage, CodeGenTypeEnum codeGenTypeEnum, Long appId) {
         ThrowUtils.throwIf(codeGenTypeEnum == null, ErrorCode.PARAMS_ERROR, "生成类型不能为空");
+        AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId);
         return switch (codeGenTypeEnum) {
             case HTML -> {
                 HtmlCodeResult htmlCodeResult = aiCodeGeneratorService.generateHtmlCode(userMessage);
@@ -42,6 +44,7 @@ public class AiCodeGeneratorFacade {
 
     public Flux<String> generateAndSaveCodeStream(String userMessage, CodeGenTypeEnum codeGenTypeEnum, Long appId) {
         ThrowUtils.throwIf(codeGenTypeEnum == null, ErrorCode.PARAMS_ERROR, "生成类型不能为空");
+        AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId);
         return switch (codeGenTypeEnum) {
             case HTML -> {
                 Flux<String> result = aiCodeGeneratorService.generateHtmlCodeStream(userMessage);

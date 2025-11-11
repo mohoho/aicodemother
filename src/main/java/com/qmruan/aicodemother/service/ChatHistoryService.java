@@ -6,6 +6,7 @@ import com.mybatisflex.core.service.IService;
 import com.qmruan.aicodemother.model.dto.chathistory.ChatHistoryQueryRequest;
 import com.qmruan.aicodemother.model.entity.ChatHistory;
 import com.qmruan.aicodemother.model.entity.User;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 
 import java.time.LocalDateTime;
 
@@ -15,6 +16,15 @@ import java.time.LocalDateTime;
  * @author qmruan
  */
 public interface ChatHistoryService extends IService<ChatHistory> {
+
+    /**
+     * 加载对话到内存
+     * @param appId
+     * @param chatMemory
+     * @param maxCount
+     * @return
+     */
+    int loadChatHistoryToMemory(Long appId, MessageWindowChatMemory chatMemory, int maxCount);
 
     /**
      * 添加对话历史
