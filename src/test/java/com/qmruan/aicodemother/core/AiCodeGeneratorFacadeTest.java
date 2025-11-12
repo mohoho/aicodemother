@@ -34,4 +34,14 @@ class AiCodeGeneratorFacadeTest {
         String res = String.join("", result);
         System.out.println(res);
     }
+
+    @Test
+    void generateVueAndSaveCodeStream() {
+        Flux<String> codeStream = aiCodeGeneratorFacade.generateAndSaveCodeStream("生成一个20行的博客", CodeGenTypeEnum.VUE_PROJECT, 1L);
+        List<String> result = codeStream.collectList().block();
+        //等待数据收集完成
+        Assertions.assertNotNull(result);
+        String res = String.join("", result);
+        System.out.println(res);
+    }
 }
