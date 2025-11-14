@@ -10,6 +10,7 @@ import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.qmruan.aicodemother.constant.AppConstant;
 import com.qmruan.aicodemother.core.AiCodeGeneratorFacade;
+import com.qmruan.aicodemother.core.handler.StreamHandlerExecutor;
 import com.qmruan.aicodemother.core.parser.CodeParserExecutor;
 import com.qmruan.aicodemother.core.saver.CodeFileSaverExecutor;
 import com.qmruan.aicodemother.exception.BusinessException;
@@ -58,6 +59,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
 
     @Resource
     private AiCodeGeneratorFacade aiCodeGeneratorFacade;
+
+    @Resource
+    private StreamHandlerExecutor streamHandlerExecutor;
 
     @Override
     public AppVO getAppVO(App app) {
@@ -143,20 +147,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         // 6. 调用 AI生成代码
         Flux<String> contentFlux = aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeGenTypeEnum, appId);
 
-        StringBuilder aiResponseBuilder = new StringBuilder();
-        // 实时收集代码片段
-        // 保存ai消息到对话历史中
-        return contentFlux.map(chunk -> {
-            // 实时收集代码片段
-            aiResponseBuilder.append(chunk);
-            return chunk;
-        }).doOnComplete(() -> {
-            // 保存ai消息到对话历史中
-            chatHistoryService.addChatMessage(appId, aiResponseBuilder.toString(), ChatHistoryMessageTypeEnum.AI.getValue(), loginUser.getId());
-        }).doOnError(error -> {
-            String aiResponse = "AI回复失败:" + error.getMessage();
-            chatHistoryService.addChatMessage(appId, aiResponse, ChatHistoryMessageTypeEnum.AI.getValue(), loginUser.getId());
-        });
+        return streamHandlerExecutor.doExecute(contentFlux, chatHistoryService, appId, loginUser, codeGenTypeEnum);
     }
 
     @Override
