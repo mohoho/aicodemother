@@ -84,9 +84,9 @@ public class AiCodeGeneratorServiceFactory {
                 .builder()
                 .id(appId)
                 .chatMemoryStore(redisChatMemoryStore)
-                .maxMessages(10)
+                .maxMessages(30)
                 .build();
-        chatHistoryService.loadChatHistoryToMemory(appId, chatMemory, 10);
+        chatHistoryService.loadChatHistoryToMemory(appId, chatMemory, 30);
         return switch (codeGenTypeEnum) {
             case VUE_PROJECT -> AiServices.builder(AiCodeGeneratorService.class)
                             .chatModel(chatModel)
