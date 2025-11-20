@@ -1,6 +1,4 @@
 spring:
-  profiles:
-    active: local
   application:
     name: ai-code-mother-backend
   session:
@@ -11,36 +9,14 @@ spring:
     url: jdbc:mysql://127.0.0.1:3306/ai_code_mother
     username: root
     password: 123456
-    hikari:
-      max-lifetime: 30000
-      minimum-idle: 3
-      maximum-pool-size: 10
-      connection-test-query: SELECT 1
   data:
     redis:
       host: localhost
       port: 6379
       ttl: 3600
       password:
-# AI
-langchain4j:
-  open-ai:
-    chat-model:
-      base-url: https://api.deepseek.com
-      api-key: <Your API Key>
-      model-name: deepseek-chat
-      log-requests: true
-      log-responses: true
-      max-tokens: 8192
-      strict-json-schema: true
-      response-format: json_object
-    streaming-chat-model:
-      base-url: https://api.deepseek.com
-      api-key: <Your API Key>
-      model-name: deepseek-chat
-      log-requests: true
-      log-responses: true
-      max-tokens: 8192
+  profiles:
+    active: local
 server:
   port: 8123
   servlet:
@@ -48,10 +24,35 @@ server:
     session:
       cookie:
         max-age: 2592000
-
 # springdoc-openapi
 springdoc:
   group-configs:
     - group: 'default'
       paths-to-match: '/**'
       packages-to-scan: com.qmruan.aicodemother.controller
+# knife4j
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+# AI
+langchain4j:
+  open-ai:
+    chat-model:
+      base-url: https://api.deepseek.com
+      api-key: <Your API Key>
+      model-name: deepseek-chat
+      strict-json-schema: true
+      response-format: json_object
+      max-tokens: 8192
+      log-requests: true
+      log-responses: true
+    streaming-chat-model:
+      base-url: https://api.deepseek.com
+      api-key: <Your API Key>
+      model-name: deepseek-chat
+      max-tokens: 8192
+      log-requests: true
+      log-responses: true
+
+
