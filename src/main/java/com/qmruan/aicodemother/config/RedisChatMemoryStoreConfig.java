@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Configuration;
 public class RedisChatMemoryStoreConfig {
 
     private String host;
-    private Integer port;
+    private int port;
     private String password;
     private long ttl;
 
