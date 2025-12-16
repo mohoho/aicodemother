@@ -4,7 +4,6 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.IdUtil;
-import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
@@ -12,8 +11,6 @@ import com.qmruan.aicodemother.constant.AppConstant;
 import com.qmruan.aicodemother.core.AiCodeGeneratorFacade;
 import com.qmruan.aicodemother.core.builder.VueProjectBuilder;
 import com.qmruan.aicodemother.core.handler.StreamHandlerExecutor;
-import com.qmruan.aicodemother.core.parser.CodeParserExecutor;
-import com.qmruan.aicodemother.core.saver.CodeFileSaverExecutor;
 import com.qmruan.aicodemother.exception.BusinessException;
 import com.qmruan.aicodemother.exception.ErrorCode;
 import com.qmruan.aicodemother.exception.ThrowUtils;
@@ -27,10 +24,10 @@ import com.qmruan.aicodemother.model.vo.AppVO;
 import com.qmruan.aicodemother.model.vo.UserVO;
 import com.qmruan.aicodemother.service.AppService;
 import com.qmruan.aicodemother.service.ChatHistoryService;
+import com.qmruan.aicodemother.service.ScreenshotService;
 import com.qmruan.aicodemother.service.UserService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
@@ -66,6 +63,31 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
 
     @Resource
     private VueProjectBuilder vueProjectBuilder;
+
+    @Resource
+    private ScreenshotService screenshotService;
+
+    /**
+     * 异步生成应用截图并更新封面
+     *
+     * @param appId  应用ID
+     * @param appUrl 应用访问URL
+     */
+    @Override
+    public void generateAppScreenshotAsync(Long appId, String appUrl) {
+        // 使用虚拟线程异步执行
+        Thread.startVirtualThread(() -> {
+            // 调用截图服务生成截图并上传
+            String screenshotUrl = screenshotService.generateAndUploadScreenshot(appUrl);
+            // 更新应用封面字段
+            App updateApp = new App();
+            updateApp.setId(appId);
+            updateApp.setCover(screenshotUrl);
+            boolean updated = this.updateById(updateApp);
+            ThrowUtils.throwIf(!updated, ErrorCode.OPERATION_ERROR, "更新应用封面字段失败");
+        });
+    }
+
 
     @Override
     public AppVO getAppVO(App app) {
@@ -207,8 +229,12 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         updateApp.setDeployedTime(LocalDateTime.now());
         boolean res = this.updateById(updateApp);
         ThrowUtils.throwIf(!res, ErrorCode.OPERATION_ERROR, "更新应用部署信息失败");
-        // 10. 返回可访问的URL地址
-        return String.format("%s/%s/", AppConstant.CODE_DEPLOY_HOST, deployKey);
+
+        // 10. 构建应用访问 URL
+        String appDeployUrl = String.format("%s/%s/", AppConstant.CODE_DEPLOY_HOST, deployKey);
+// 11. 异步生成截图并更新应用封面
+        generateAppScreenshotAsync(appId, appDeployUrl);
+        return appDeployUrl;
     }
 
     /**
