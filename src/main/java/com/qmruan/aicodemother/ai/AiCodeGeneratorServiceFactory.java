@@ -2,7 +2,7 @@ package com.qmruan.aicodemother.ai;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.qmruan.aicodemother.ai.tools.FileWriteTool;
+import com.qmruan.aicodemother.ai.tools.*;
 import com.qmruan.aicodemother.exception.BusinessException;
 import com.qmruan.aicodemother.exception.ErrorCode;
 import com.qmruan.aicodemother.model.enums.CodeGenTypeEnum;
@@ -42,6 +42,9 @@ public class AiCodeGeneratorServiceFactory {
 
     @Resource
     private ChatHistoryService chatHistoryService;
+
+    @Resource
+    private ToolManager toolManager;
 
     /**
      * AI 服务实例缓存
@@ -89,15 +92,13 @@ public class AiCodeGeneratorServiceFactory {
         chatHistoryService.loadChatHistoryToMemory(appId, chatMemory, 30);
         return switch (codeGenTypeEnum) {
             case VUE_PROJECT -> AiServices.builder(AiCodeGeneratorService.class)
-                            .chatModel(chatModel)
-                            .streamingChatModel(reasoningStreamingChatModel)
-                            .chatMemoryProvider(memoryId -> chatMemory)
-                            .tools(new FileWriteTool())
-                            //处理工具调用幻觉问题
-                            .hallucinatedToolNameStrategy(toolExecutionRequest ->
-                                ToolExecutionResultMessage.from(toolExecutionRequest, "Error: there is no tool called" + toolExecutionRequest.name())
-                            )
-                            .build();
+                    .streamingChatModel(reasoningStreamingChatModel)
+                    .chatMemoryProvider(memoryId -> chatMemory)
+                    .tools(toolManager.getAllTools())
+                    .hallucinatedToolNameStrategy(toolExecutionRequest -> ToolExecutionResultMessage.from(
+                            toolExecutionRequest, "Error: there is no tool called " + toolExecutionRequest.name()
+                    ))
+                    .build();
             case MULTI_FILE, HTML -> AiServices.builder(AiCodeGeneratorService.class)
                         .chatModel(chatModel)
                         .streamingChatModel(openAiStreamingChatModel)
