@@ -87,7 +87,7 @@ public class AiCodeGeneratorServiceFactory {
                 .builder()
                 .id(appId)
                 .chatMemoryStore(redisChatMemoryStore)
-                .maxMessages(30)
+                .maxMessages(50)
                 .build();
         chatHistoryService.loadChatHistoryToMemory(appId, chatMemory, 30);
         return switch (codeGenTypeEnum) {

@@ -16,7 +16,7 @@ spring:
       ttl: 3600
       password:
   profiles:
-    active: prod
+    active: local
 server:
   port: 8123
   servlet:

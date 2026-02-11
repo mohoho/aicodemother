@@ -8,6 +8,8 @@ import com.qmruan.aicodemother.ai.model.MultiFileCodeResult;
 import com.qmruan.aicodemother.ai.model.message.AiResponseMessage;
 import com.qmruan.aicodemother.ai.model.message.ToolExecutedMessage;
 import com.qmruan.aicodemother.ai.model.message.ToolRequestMessage;
+import com.qmruan.aicodemother.constant.AppConstant;
+import com.qmruan.aicodemother.core.builder.VueProjectBuilder;
 import com.qmruan.aicodemother.core.parser.CodeParserExecutor;
 import com.qmruan.aicodemother.core.saver.CodeFileSaverExecutor;
 import com.qmruan.aicodemother.exception.BusinessException;
@@ -27,6 +29,9 @@ import java.io.File;
 @Slf4j
 @Service
 public class AiCodeGeneratorFacade {
+
+    @Resource
+    VueProjectBuilder vueProjectBuilder;
 
     @Resource
     private AiCodeGeneratorServiceFactory aiCodeGeneratorServiceFactory;
@@ -63,7 +68,7 @@ public class AiCodeGeneratorFacade {
             }
             case VUE_PROJECT -> {
                 TokenStream result = aiCodeGeneratorService.generateVueProjectCodeStream(appId, userMessage);
-                yield processTokenStream(result);
+                yield processTokenStream(result, appId);
             }
             default -> {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "生成类型错误");
@@ -82,7 +87,7 @@ public class AiCodeGeneratorFacade {
      * @param tokenStream TokenStream 对象
      * @return Flux<String> 流式响应
      */
-    private Flux<String> processTokenStream(TokenStream tokenStream) {
+    private Flux<String> processTokenStream(TokenStream tokenStream, Long appId) {
         return Flux.create(sink -> {
             tokenStream.onPartialResponse((String partialResponse) -> {
                         AiResponseMessage aiResponseMessage = new AiResponseMessage(partialResponse);
@@ -97,6 +102,8 @@ public class AiCodeGeneratorFacade {
                         sink.next(JSONUtil.toJsonStr(toolExecutedMessage));
                     })
                     .onCompleteResponse((ChatResponse response) -> {
+                        String projectPath = AppConstant.CODE_OUTPUT_ROOT_DIR + "/vue_project_" + appId;
+                        vueProjectBuilder.buildProject(projectPath);
                         sink.complete();
                     })
                     .onError((Throwable error) -> {
