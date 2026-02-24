@@ -7,6 +7,7 @@ import com.qmruan.aicodemother.exception.BusinessException;
 import com.qmruan.aicodemother.exception.ErrorCode;
 import com.qmruan.aicodemother.model.enums.CodeGenTypeEnum;
 import com.qmruan.aicodemother.service.ChatHistoryService;
+import com.qmruan.aicodemother.utils.SpringContextUtil;
 import dev.langchain4j.community.store.memory.chat.redis.RedisChatMemoryStore;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
@@ -15,6 +16,7 @@ import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.service.AiServices;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -22,20 +24,17 @@ import java.time.Duration;
 
 /**
  * AI服务创建工厂
+ * 通过 ApplicationContext 按名称获取 prototype 的 StreamingChatModel，确保每次创建服务时拿到新实例，避免多线程并发时共用一个 model 导致只有单线程响应。
  */
-
 @Configuration
 @Slf4j
 public class AiCodeGeneratorServiceFactory {
 
-    @Resource
+    private static final String BEAN_STREAMING_CHAT_MODEL = "streamingChatModelPrototype";
+    private static final String BEAN_REASONING_STREAMING_CHAT_MODEL = "reasoningStreamingChatModelPrototype";
+
+    @Resource(name = "openAiChatModel")
     private ChatModel chatModel;
-
-    @Resource
-    private StreamingChatModel openAiStreamingChatModel;
-
-    @Resource
-    private StreamingChatModel reasoningStreamingChatModel;
 
     @Resource
     private RedisChatMemoryStore redisChatMemoryStore;
@@ -90,9 +89,11 @@ public class AiCodeGeneratorServiceFactory {
                 .maxMessages(50)
                 .build();
         chatHistoryService.loadChatHistoryToMemory(appId, chatMemory, 30);
+        StreamingChatModel streamingModel = SpringContextUtil.getBean(BEAN_STREAMING_CHAT_MODEL, StreamingChatModel.class);
+        StreamingChatModel reasoningModel = SpringContextUtil.getBean(BEAN_REASONING_STREAMING_CHAT_MODEL, StreamingChatModel.class);
         return switch (codeGenTypeEnum) {
             case VUE_PROJECT -> AiServices.builder(AiCodeGeneratorService.class)
-                    .streamingChatModel(reasoningStreamingChatModel)
+                    .streamingChatModel(reasoningModel)
                     .chatMemoryProvider(memoryId -> chatMemory)
                     .tools(toolManager.getAllTools())
                     .hallucinatedToolNameStrategy(toolExecutionRequest -> ToolExecutionResultMessage.from(
@@ -101,7 +102,7 @@ public class AiCodeGeneratorServiceFactory {
                     .build();
             case MULTI_FILE, HTML -> AiServices.builder(AiCodeGeneratorService.class)
                         .chatModel(chatModel)
-                        .streamingChatModel(openAiStreamingChatModel)
+                        .streamingChatModel(streamingModel)
                         .chatMemoryProvider(memoryId -> chatMemory)
                         .build();
             default -> throw new BusinessException(ErrorCode.SYSTEM_ERROR, "不支持的生成类型" + codeGenTypeEnum.getValue());
