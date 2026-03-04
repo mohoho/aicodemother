@@ -2,6 +2,8 @@ package com.qmruan.aicodemother.ai;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.qmruan.aicodemother.ai.guardrail.PromptSafetyInputGuardrail;
+import com.qmruan.aicodemother.ai.guardrail.RetryOutputGuardrail;
 import com.qmruan.aicodemother.ai.tools.*;
 import com.qmruan.aicodemother.exception.BusinessException;
 import com.qmruan.aicodemother.exception.ErrorCode;
@@ -96,6 +98,8 @@ public class AiCodeGeneratorServiceFactory {
                     .streamingChatModel(reasoningModel)
                     .chatMemoryProvider(memoryId -> chatMemory)
                     .tools(toolManager.getAllTools())
+                    .maxSequentialToolsInvocations(20)
+                    .inputGuardrails(new PromptSafetyInputGuardrail())
                     .hallucinatedToolNameStrategy(toolExecutionRequest -> ToolExecutionResultMessage.from(
                             toolExecutionRequest, "Error: there is no tool called " + toolExecutionRequest.name()
                     ))
@@ -104,6 +108,7 @@ public class AiCodeGeneratorServiceFactory {
                         .chatModel(chatModel)
                         .streamingChatModel(streamingModel)
                         .chatMemoryProvider(memoryId -> chatMemory)
+                        .inputGuardrails(new PromptSafetyInputGuardrail())
                         .build();
             default -> throw new BusinessException(ErrorCode.SYSTEM_ERROR, "不支持的生成类型" + codeGenTypeEnum.getValue());
         };
