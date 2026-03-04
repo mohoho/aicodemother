@@ -18,6 +18,8 @@ import com.qmruan.aicodemother.model.dto.app.*;
 import com.qmruan.aicodemother.model.entity.User;
 import com.qmruan.aicodemother.model.enums.CodeGenTypeEnum;
 import com.qmruan.aicodemother.model.vo.AppVO;
+import com.qmruan.aicodemother.ratelimiter.annotation.RateLimit;
+import com.qmruan.aicodemother.ratelimiter.enums.RateLimitType;
 import com.qmruan.aicodemother.service.ProjectDownloadService;
 import com.qmruan.aicodemother.service.UserService;
 import jakarta.annotation.Resource;
@@ -116,6 +118,7 @@ public class AppController {
      * @return
      */
     @GetMapping(value = "/chat/gen/code", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @RateLimit(limitType = RateLimitType.USER, rate = 5, rateInterval = 60, message = "AI 对话请求过于频繁，请稍后再试")
     public Flux<ServerSentEvent<String>> chatToGenCode(@RequestParam Long appId, @RequestParam String message, HttpServletRequest request) {
         ThrowUtils.throwIf(appId == null || appId < 0, ErrorCode.PARAMS_ERROR, "应用id错误");
         ThrowUtils.throwIf(StrUtil.isBlank(message), ErrorCode.PARAMS_ERROR, "提示词不能为空");
